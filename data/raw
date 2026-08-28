@@ -1,0 +1,9 @@
+# Raw Data
+📂 Data Sources
+Raw data files provided by mentor for educational purposes only.
+
+| File | Description |
+|------|---------------|
+| `inventory.csv` | Inventory data |
+| `products.csv` |  Products data |
+| `sales_orders.csv` | Sales orders data |
