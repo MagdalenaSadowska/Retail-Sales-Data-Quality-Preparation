@@ -1,0 +1,5 @@
+SELECT TOP (1000) [product_id]
+      ,[warehouse_country]
+      ,[stock_quantity]
+      ,[last_stock_update]
+  FROM [retail-analytics-eda].[dbo].[inventory_mmmgkubv]
