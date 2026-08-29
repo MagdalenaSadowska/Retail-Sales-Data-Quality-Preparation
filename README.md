@@ -1,5 +1,5 @@
 # Retail-Sales-Data-Quality-Preparation
-Retail sales EDA | SQL (data cleaning &amp; prep)  
+Retail sales EDA | SQL (data cleaning &amp; prep)   
 
 ## 🛠️ Tools Used
 - SQL Server (SSMS) — data cleaning & analysis
