@@ -116,7 +116,7 @@ FROM sales_orders;
 
 **_Screen 3: total rows vs. unique rows in the order_id column_**
 
-As shown above, there are 260,780 rows in total, while the number of unique values is 260,000, which shows we have 780 duplicates. I want to check what these duplicates look like, and possibly decide what to do with them during data cleaning. I used the following query for this.
+As shown above, there are 260,780 rows in total, while the number of unique values is 260,000, which shows we have 780 duplicates. I wanted to check what these duplicates look like, and possibly decide what to do with them during data cleaning. I used the following query for this.
 
 ```sql
 SELECT order_id, COUNT(*) AS quantity_duplicates
@@ -157,7 +157,7 @@ GROUP BY status
 
 As shown in the screenshot above, we have 6 different statuses. It's worth noting that some of them mean the same thing but are written in upper or lower case, or use synonyms, such as COMPLITE vs. Complete, or SHIP vs. Shipped. For the analysis, the status naming needs to be standardized, and the standardized names should also be passed on to the data collection team so they can unify them for any future analyses.
 
-Next, I checked for duplicates in the country column
+Next, I checked for duplicates in the country column.
 
 ```sql
 SELECT COUNT(*) AS total_rows,
@@ -169,7 +169,7 @@ FROM sales_orders;
 
 **_Screen 7: total rows vs. unique rows in the country column_**
 
-As shown in the screenshot above, our table contains 28 countries. Now I'll check their names and how many records there are for each country.
+As shown in the screenshot above, our table contains 28 countries. I checked their names and how many records there are for each country.
 
 ```sql
 SELECT country, COUNT(*) AS name_duplicates
@@ -199,7 +199,7 @@ WHERE quantity IS NOT NULL AND unit_price IS NOT NULL
 
 **_Screen 9: minimum and maximum values for the quantity and price columns_**
 
-In the query above, I added an extra condition so the result would exclude null values. Without this condition the result would have been the same, since we already checked (screen 2) that there are no null values in these columns. Still, I added this condition as "good practice", to make sure that if such a value did exist, it wouldn't affect the result. Based on the results above, it's worth additionally verifying the minimum values in the quantity and price columns. A value of 0 for price or quantity may indicate a cancelled order, a free item added to an order, or a return/complaint. To verify this further, I'm checking whether the 0 values in both columns correlate with the cancelled status.
+In the query above, I added an extra condition so the result would exclude null values. Without this condition the result would have been the same, since we already checked (screen 2) that there are no null values in these columns. Still, I added this condition as "good practice", to make sure that if such a value did exist, it wouldn't affect the result. Based on the results above, it's worth additionally verifying the minimum values in the quantity and price columns. A value of 0 for price or quantity may indicate a cancelled order, a free item added to an order, or a return/complaint. To verify this further, I checked whether the 0 values in both columns correlate with the cancelled status.
 
 ```sql
 SELECT quantity,status
@@ -311,8 +311,8 @@ Next, I wanted to check whether the names in the category column are consistent.
 SELECT category, COUNT(*) AS all_rows
 FROM products_mmmgmeum
 GROUP BY ROLLUP(category)
-ORDER BY all_rows
-FROM products_mmmgmeum; 
+ORDER BY all_rows;
+ 
 ```
 
 ![Screenshot](assets/screen_22.png)
@@ -344,7 +344,7 @@ FROM products_mmmgmeum
 WHERE CAST(base_price AS decimal(10,2)) < 0.01;
 ```
 
-In this query, I also used the condition WHERE CAST(base_price AS decimal(10,2)) < 0.01, since the input data for this column is nvarchar(50), and I wanted to make sure the comparison to a number would work correctly and predictably. The result showed that there is no value below 0.01 in the base_price column. So I also wanted to check what the lowest and highest base price in this column were.
+In this query, I also used the condition WHERE CAST(base_price AS decimal(10,2)) < 0.01, since the input data for this column is nvarchar(50), and I wanted to make sure the comparison to a number would work correctly and predictably. The result showed that there is no value below 0.01 in the base_price column. So I also wanted to check what the lowest and highest base prices in this column were.
 
 ```sql
 SELECT 
@@ -359,7 +359,7 @@ FROM products_mmmgmeum;
 
 Neither the minimum nor the maximum price raised any concerns, so I assume the data in this column is correct.
 
-The last column in this table is launch_date. We know it contains 91 null values, let's check whether it also contains any date formats other than the ones we expect.
+The last column in this table is launch_date. We know it contains 91 null values. I checked whether it also contains any date formats other than the ones we expect.
 
 ```sql
 SELECT DISTINCT launch_date
@@ -379,7 +379,7 @@ Besides null values, this column also contains dates without a day and entries w
 
 ### ANALYSIS OF THE INVENTORY TABLE
 
-First, I check the structure of the inventory table
+First, I checked the structure of the inventory table
 
 ```sql
 SELECT TOP 5 *
@@ -438,7 +438,7 @@ FROM inventory_mmmgkubv;
 
 Just as with the country column in the sales_orders table, here too we have inconsistent country naming. For example, we have both DE and Germany. For the analysis, the country names need to be standardized, and the standardized names should also be passed on to the data collection team so they can unify them for any future analyses.
 
-Next, I checked the stock_quantity column for any values below 0, which would suggest errors in the data
+Next, I checked the stock_quantity column for any values below 0, which would suggest errors in the data.
 
 ```sql
 SELECT stock_quantity
@@ -468,7 +468,7 @@ SELECT DISTINCT last_stock_update
 FROM inventory_mmmgkubv;
 ```
 
-It turned out that all dates are in the YYYY-MM-DD format, as shown in the screenshot below
+It turned out that all dates are in the YYYY-MM-DD format, as shown in the screenshot below.
 
 <img src="assets/screen_30.png" width="170"><img src="assets/screen_31.png" width="163"><img src="assets/screen_32.png" width="172"><img src="assets/screen_33.png" width="170">
 
