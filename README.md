@@ -9,11 +9,11 @@ Retail sales EDA | SQL (data cleaning &amp; prep)
 ## 📁 Data
 
 Raw data located in `/data/raw/`.
-Files provided by mentor for educational purposes only.
+Files provided by my mentor for educational purposes only.
 
 ## 📂 Data Sources
 
-Raw data files provided by mentor for educational purposes only.
+Raw data files provided by my mentor for educational purposes only.
 
 | File | Description |
 |------|-------------|
@@ -129,7 +129,7 @@ HAVING COUNT(*)>1;
 
 **_Screen 4: duplicated order_id values_**
 
-As shown above, all 780 duplicated order_id values appear exactly twice. This was most likely a system error that read the orders in twice. It's worth reporting this to the team responsible for data collection, so they can check whether this error can be prevented in the future, and monitor whether it recurs in the next analysis of data from this store. Given that duplicates account for only 0.3% of all rows, I think I can already recommend removing these rows at this stage, since a gap of this size has no impact on a reliable analysis.
+As shown above, all 780 duplicated order_id values appear exactly twice. This was most likely a system error that duplicated the orders. It's worth reporting this to the team responsible for data collection, so they can check whether this error can be prevented in the future, and monitor whether it recurs in the next analysis of data from this store. Given that duplicates account for only 0.3% of all rows, I think I can already recommend removing these rows at this stage, since a gap of this size has no impact on a reliable analysis.
 
 Next, I checked for duplicates in the status column. I used the following query:
 
@@ -218,7 +218,7 @@ WHERE CAST(unit_price AS decimal(10,2)) = 0
 **_Screen 10: Statuses associated with quantity=0 and unit_price=0.0_**
 
 As shown above, I checked what the statuses look like for the value 0. Additionally, for unit_price I used the condition WHERE CAST(unit_price AS decimal(10,2)) = 0, since unit_price is stored as text and I wanted to make sure the comparison to a number would work correctly and predictably.
-As for the data, we can see that the 0 values are associated with various statuses. An obvious data error is, for example, quantity 0 with a status of complete or done. Similarly, we wouldn't expect statuses like Completed or shipped to have a price of 0. This data will be examined more closely during data cleaning. It's worth checking whether there's a visible correlation or these are simply errors, and deciding whether they should be removed or kept.
+As for the data, we can see that the 0 values are associated with various statuses. An obvious data error is, for example, quantity 0 with a status of Complete or Done. Similarly, we wouldn't expect statuses like Completed or Shipped to have a price of 0. This data will be examined more closely during data cleaning. It's worth checking whether there's a visible correlation or these are simply errors, and deciding whether they should be removed or kept.
 
 Next, I checked the date formats in the order_date column.
 
@@ -334,7 +334,7 @@ ORDER BY all_rows;
 
 **_Screen 17: Subcategories in the sub_category column_**
 
-As shown in the screenshot above, we have 22 subcategories, their naming is also consistent, and every row has a subcategory assigned.
+As shown in the screenshot above, we have 22 subcategories; their naming is also consistent, and every row has a subcategory assigned.
 
 Next, I checked the base_price column. First, I checked whether there was any price below 0.01.
 
