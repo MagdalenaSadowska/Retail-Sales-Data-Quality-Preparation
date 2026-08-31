@@ -4,7 +4,7 @@ Retail sales EDA | SQL (data cleaning &amp; prep)
 
 ## 🛠️ Tools Used
 
-- SQL Server (SSMS) — data cleaning & analysis
+- SQL Server (SSMS) - data cleaning & analysis
 
 ## 📁 Data
 
@@ -29,15 +29,15 @@ Raw data files provided by mentor for educational purposes only.
 
 ## 🗂️ SQL Scripts
 
-- `sql/00_data_import.sql` — initial data import and table setup
-- `sql/01_data_quality.sql` — data quality check for all three tables
-- `sql/02_data_cleaning.sql` — data cleaning and standardization
-- `sql/03_data_preparation.sql` — views and final data preparation for analysis
+- `sql/00_data_import.sql` - initial data import and table setup
+- `sql/01_data_quality.sql` - data quality check for all three tables
+- `sql/02_data_cleaning.sql` - data cleaning and standardization
+- `sql/03_data_preparation.sql` - views and final data preparation for analysis
 
 
 ## Data Quality Report
 
-This dataset covers retail clothing sales across Europe (including Poland, France, Austria, Italy, Germany, and other countries) from 2015 to 2024. The data was provided by my mentor and is synthetic, for educational purposes — it does not come from a real store.
+This dataset covers retail clothing sales across Europe (including Poland, France, Austria, Italy, Germany, and other countries) from 2015 to 2024. The data was provided by my mentor and is synthetic, for educational purposes, it does not come from a real store.
 
 ### DATA QUALITY ANALYSIS FOR TABLES: SALES_ORDERS, PRODUCTS, AND INVENTORY
 
@@ -96,7 +96,7 @@ SELECT COUNT (*) AS total_rows,
 FROM sales_orders;
 ```
 
-Null values occurred in the order_date and discount_pct columns. For order_date there are 629 such values, which is 0.2%, while for discount_pct there are as many as 31,322 values, or 12%. For discount_pct, the missing values most likely indicate that no discount was applied — still, these gaps are worth investigating further during data cleaning.
+Null values occurred in the order_date and discount_pct columns. For order_date there are 629 such values, which is 0.2%, while for discount_pct there are as many as 31,322 values, or 12%. For discount_pct, the missing values most likely indicate that no discount was applied. Still, these gaps are worth investigating further during data cleaning.
 
 ![Screenshot](assets/screen_02.png)
 
@@ -181,7 +181,7 @@ GROUP BY country
 
 **_Screen 8: Country names and how often they appear in the table_**
 
-As shown in screen 8, we have 28 rows, but we can also see that the naming is inconsistent. We have CZ, Czech, Czech Republic, and Czechia — and it's practically the same story for most other countries. For the analysis, the country names need to be standardized, and the standardized names should also be passed on to the data collection team so they can unify them for any future analyses.
+As shown in screen 8, we have 28 rows, but we can also see that the naming is inconsistent. We have CZ, Czech, Czech Republic, and Czechia and it's practically the same story for most other countries. For the analysis, the country names need to be standardized, and the standardized names should also be passed on to the data collection team so they can unify them for any future analyses.
 
 Next, I decided to check the quantity and unit_price columns to see whether there were any erroneous values, such as negative numbers or unusually high product prices.
 
@@ -218,7 +218,7 @@ WHERE CAST(unit_price AS decimal(10,2)) = 0
 **_Screen 10: Statuses associated with quantity=0 and unit_price=0.0_**
 
 As shown above, I checked what the statuses look like for the value 0. Additionally, for unit_price I used the condition WHERE CAST(unit_price AS decimal(10,2)) = 0, since unit_price is stored as text and I wanted to make sure the comparison to a number would work correctly and predictably.
-As for the data, we can see that the 0 values are associated with various statuses. An obvious data error is, for example, quantity 0 with a status of complete or done — similarly, we wouldn't expect statuses like Completed or shipped to have a price of 0. This data will be examined more closely during data cleaning. It's worth checking whether there's a visible correlation or these are simply errors, and deciding whether they should be removed or kept.
+As for the data, we can see that the 0 values are associated with various statuses. An obvious data error is, for example, quantity 0 with a status of complete or done. Similarly, we wouldn't expect statuses like Completed or shipped to have a price of 0. This data will be examined more closely during data cleaning. It's worth checking whether there's a visible correlation or these are simply errors, and deciding whether they should be removed or kept.
 
 Next, I checked the date formats in the order_date column.
 
@@ -288,7 +288,7 @@ FROM products_mmmgmeum;
 
 **_Screen 14: Null values in the products table_**
 
-As shown in screen 14, null values occur only in the launch_date column, with 91 such values — 3.64% of the whole dataset. That's a fairly small percentage, so it shouldn't negatively affect the analysis. I'll decide what to do with this data during data cleaning.
+As shown in screen 14, null values occur only in the launch_date column, with 91 such values: 3.64% of the whole dataset. That's a fairly small percentage, so it shouldn't negatively affect the analysis. I'll decide what to do with this data during data cleaning.
 
 Next, I started checking for duplicates in individual columns, beginning with product_id.
 
@@ -334,7 +334,7 @@ ORDER BY all_rows;
 
 **_Screen 17: Subcategories in the sub_category column_**
 
-As shown in the screenshot above, we have 22 subcategories — their naming is also consistent, and every row has a subcategory assigned.
+As shown in the screenshot above, we have 22 subcategories, their naming is also consistent, and every row has a subcategory assigned.
 
 Next, I checked the base_price column. First, I checked whether there was any price below 0.01.
 
@@ -359,7 +359,7 @@ FROM products_mmmgmeum;
 
 Neither the minimum nor the maximum price raised any concerns, so I assume the data in this column is correct.
 
-The last column in this table is launch_date. We know it contains 91 null values — let's check whether it also contains any date formats other than the ones we expect.
+The last column in this table is launch_date. We know it contains 91 null values, let's check whether it also contains any date formats other than the ones we expect.
 
 ```sql
 SELECT DISTINCT launch_date
@@ -375,7 +375,7 @@ AND launch_date NOT LIKE '__-__-____';
 
 **_Screen 19: Non-standard dates in the launch_date column_**
 
-Besides null values, this column also contains dates without a day and entries with the text not_a_date. This is something to resolve during data cleaning — whether to fill in these dates randomly or remove them.
+Besides null values, this column also contains dates without a day and entries with the text not_a_date. This is something to resolve during data cleaning, whether to fill in these dates randomly or remove them.
 
 ### ANALYSIS OF THE INVENTORY TABLE
 
@@ -417,7 +417,7 @@ FROM inventory_mmmgkubv
 WHERE product_id<0;
 ```
 
-It turned out there were no such results. I also checked whether the product_id column contains any non-numeric values — I didn't find any of those either. So the data in this column is correct.
+It turned out there were no such results. I also checked whether the product_id column contains any non-numeric values. I didn't find any of those either. So the data in this column is correct.
 
 ```sql
 SELECT product_id
