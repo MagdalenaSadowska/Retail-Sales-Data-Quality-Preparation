@@ -1358,3 +1358,23 @@ As a result of data cleaning, the country names in warehouse_country were standa
 ### Summary of the data cleaning process
 
 Data cleaning covered three tables: sales_orders, products, and inventory. The work focused on five recurring types of problems: missing data (nulls), duplicates, inconsistent text naming, non-standard date formats, and zero values inconsistent with business logic. In every case, the decision to remove, fill in, or standardize records was preceded by checking whether the problem correlated with other columns, and by checking what share of the data it actually affected. Only gaps that made up a few percent of the dataset and had no reliable way of being reconstructed were removed. Country naming in both tables where it occurred (sales_orders and inventory) was unified to ISO 3166-1 alpha-2 codes, and all dates (order_date, launch_date, last_stock_update) were brought to the YYYY-MM-DD format compliant with ISO 8601. After cleaning, the sales_orders table has 255,402 rows (out of the original 260,780), products has 2,400 rows (out of the original 2,500), and inventory has 3,715 rows (out of the original 3,741), with unified country naming and the gaps in the last stock update date removed. The data in this state is ready for further business analysis.
+
+'---'
+
+### Recommendations for the Data Collection Team
+
+- **Unify the order status dictionary.** The same status is currently recorded in several different ways (e.g. SHIP/Shipped, complete/Completed). A closed list of allowed values (e.g. a dropdown in the source system) should be introduced instead of a free-text field. This matters because inconsistent recording forces every analyst to manually map the variants before any analysis can begin, which costs time and increases the risk of missing one of the variants.
+
+- **Unify country name recording.** The same countries appear under many different names and abbreviations (e.g. DE, Germany, Deutschland, GER). A fixed list of ISO 3166-1 alpha-2 codes should be introduced already at the data entry stage. This will make it possible to correctly group sales and inventory data by country, instead of requiring every report to re-clean the same data from scratch.
+
+- **Standardize the date format.** Dates appear in several different formats (DD/MM/YYYY, MM/DD/YYYY, YYYY.MM.DD, and others), which increases the risk of misinterpretation (e.g. confusing the day with the month). A single format should be enforced (ideally YYYY-MM-DD, compliant with ISO 8601) directly in the data entry form or system. This matters because confusing the day with the month during date conversion can silently introduce incorrect values into the analysis, with no error message at all.
+
+- **Investigate the cause of duplicated orders.** 780 fully duplicated rows were found in the sales_orders table, pointing to a system error (most likely the same order being recorded twice). The recording logic on the source system side should be reviewed. This is very important, since undetected duplicates artificially inflate revenue and order counts in every report based on this data.
+
+- **Review the validation of the quantity and unit_price fields.** Records were found with a quantity or price of 0 alongside statuses suggesting a completed order (e.g. completed, shipped), which makes no business sense. Validation should be added to prevent this combination from being saved. This kind of error can point to a deeper problem in the sales process (e.g. system integration errors), not just isolated data entry mistakes.
+
+- **Reduce the occurrence of missing data (nulls).** Several columns (order_date, discount_pct, launch_date, last_stock_update) contain empty values. It should be established whether a field is required, and this should be enforced at the form or system level, rather than allowing it to be skipped. The lack of a clear rule about whether a field is mandatory creates ambiguity: it's unclear whether an empty value means missing data, an error, or a deliberate choice (e.g. no discount applied).
+
+- **Synchronize the stock update date with the order date.** Discrepancies between these two dates make it difficult to reliably analyze inventory levels; an automatic update on every transaction should be considered. This matters because, without this synchronization, it's impossible to reliably assess whether a given product was actually in stock at the time of sale.
+
+Wklej to na samym końcu pliku README, po sekcji "Summary of the data cleaning process" (bez dodatkowej kreski --- przed tym, bo to naturalna kontynuacja tego samego raportu, nie nowa, osobna sekcja).
