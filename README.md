@@ -1377,4 +1377,3 @@ Data cleaning covered three tables: sales_orders, products, and inventory. The w
 
 - **Synchronize the stock update date with the order date.** Discrepancies between these two dates make it difficult to reliably analyze inventory levels; an automatic update on every transaction should be considered. This matters because, without this synchronization, it's impossible to reliably assess whether a given product was actually in stock at the time of sale.
 
-Wklej to na samym końcu pliku README, po sekcji "Summary of the data cleaning process" (bez dodatkowej kreski --- przed tym, bo to naturalna kontynuacja tego samego raportu, nie nowa, osobna sekcja).
