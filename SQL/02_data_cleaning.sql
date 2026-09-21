@@ -139,7 +139,23 @@
 
 	DELETE FROM sales_orders
 	WHERE order_date LIKE '____-__'
-	OR order_date = 'not_a_date'
+		OR launch_date  LIKE '____/__' 
+		OR order_date = 'not_a_date'
+
+	SELECT order_date
+FROM sales_orders
+WHERE order_date NOT LIKE '__/__/____'
+	AND order_date NOT LIKE '__-__-____' 
+	AND order_date NOT LIKE '____/__/__'
+	AND order_date NOT LIKE '____.__.__'
+	AND order_date NOT LIKE '__.__.____'
+	AND order_date NOT LIKE '____-__-__';
+
+	SELECT order_date, SUBSTRING(order_date,1,2) AS first_pair, SUBSTRING(order_date,4,2) AS second_pair
+	FROM sales_orders
+	WHERE (order_date LIKE '__/__/____' AND SUBSTRING(order_date,1,2) < '13' AND SUBSTRING(order_date,4,2) > '12')
+ OR (order_date LIKE '__.__.____' AND SUBSTRING(order_date,1,2) < '13' AND SUBSTRING(order_date,4,2) > '12')
+ OR (order_date LIKE '__-__-____' AND SUBSTRING(order_date,1,2) < '13' AND SUBSTRING(order_date,4,2) > '12');
 
 	 -- STANDARDIZING DATE FORMATS
 	 SELECT order_date,
