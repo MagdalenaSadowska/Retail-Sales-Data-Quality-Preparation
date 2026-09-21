@@ -479,7 +479,7 @@ It turned out that all dates are in the YYYY-MM-DD format, as shown in the scree
 The analysis covered three tables (sales_orders, products, inventory) for duplicates, null values, inconsistent naming, and non-standard date formats. The main data quality issues are: 780 duplicated orders in sales_orders (0.3% of rows, recommended for removal), inconsistent order status and country names in both tables (sales_orders and inventory) that need standardizing, several date formats in the order_date, launch_date, and last_stock_update columns (to be unified to YYYY-MM-DD), and zero values in quantity and unit_price that need further verification for a possible correlation with order status. Missing data (nulls) occurs at a low rate and, in most cases, shouldn't significantly affect the further analysis. The findings from this stage will form the basis for decisions made during data cleaning.
 
 
-### DATA CLEANING FOR TABLES: SALES_ORDERS, PRODUCTS, AND INVENTORY
+## DATA CLEANING FOR TABLES: SALES_ORDERS, PRODUCTS, AND INVENTORY
 
 ### Table sales_orders
 
@@ -599,7 +599,8 @@ The command ran successfully, 31,243 records were changed, and there are now 57,
 First, I take on order_id. I want to check whether only order_id is duplicated, or the rest of the data for a given id number as well. To check this, I wrote the following query:
 
 ```sql
-SELECT *FROM sales_orders
+SELECT *
+FROM sales_orders
 WHERE order_id IN (
 	SELECT order_id
 	FROM sales_orders
@@ -1359,7 +1360,7 @@ As a result of data cleaning, the country names in warehouse_country were standa
 Data cleaning covered three tables: sales_orders, products, and inventory. The work focused on five recurring types of problems: missing data (nulls), duplicates, inconsistent text naming, non-standard date formats, and zero values inconsistent with business logic. In every case, the decision to remove, fill in, or standardize records was preceded by checking whether the problem correlated with other columns, and by checking what share of the data it actually affected. Only gaps that made up a few percent of the dataset and had no reliable way of being reconstructed were removed. Country naming in both tables where it occurred (sales_orders and inventory) was unified to ISO 3166-1 alpha-2 codes, and all dates (order_date, launch_date, last_stock_update) were brought to the YYYY-MM-DD format compliant with ISO 8601. After cleaning, the sales_orders table has 255,402 rows (out of the original 260,780), products has 2,400 rows (out of the original 2,500), and inventory has 3,715 rows (out of the original 3,741), with unified country naming and the gaps in the last stock update date removed. The data in this state is ready for further business analysis.
 
 
-### Recommendations for the Data Collection Team
+## Recommendations for the Data Collection Team
 
 - **Unify the order status dictionary.** The same status is currently recorded in several different ways (e.g. SHIP/Shipped, complete/Completed). A closed list of allowed values (e.g. a dropdown in the source system) should be introduced instead of a free-text field. This matters because inconsistent recording forces every analyst to manually map the variants before any analysis can begin, which costs time and increases the risk of missing one of the variants.
 
