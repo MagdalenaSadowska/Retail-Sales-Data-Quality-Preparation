@@ -1359,6 +1359,290 @@ As a result of data cleaning, the country names in warehouse_country were standa
 
 Data cleaning covered three tables: sales_orders, products, and inventory. The work focused on five recurring types of problems: missing data (nulls), duplicates, inconsistent text naming, non-standard date formats, and zero values inconsistent with business logic. In every case, the decision to remove, fill in, or standardize records was preceded by checking whether the problem correlated with other columns, and by checking what share of the data it actually affected. Only gaps that made up a few percent of the dataset and had no reliable way of being reconstructed were removed. Country naming in both tables where it occurred (sales_orders and inventory) was unified to ISO 3166-1 alpha-2 codes, and all dates (order_date, launch_date, last_stock_update) were brought to the YYYY-MM-DD format compliant with ISO 8601. After cleaning, the sales_orders table has 255,402 rows (out of the original 260,780), products has 2,400 rows (out of the original 2,500), and inventory has 3,715 rows (out of the original 3,741), with unified country naming and the gaps in the last stock update date removed. The data in this state is ready for further business analysis.
 
+### Formatting data in the tables
+
+The last thing I want to take care of when it comes to preparing the data is making sure the columns have the right formats. First, I want to see what the structure of the table looks like:
+
+I do this with the following query:
+
+```sql
+SELECT TOP 5 *
+FROM sales_orders; 
+```
+
+![Screenshot](assets/screen_50.png)
+
+**_SCREEN 48: checking the structure of the sales_orders table_**
+
+The table has nine columns with the following formats:
+
+- order_id - integer
+
+- order_date - nvarchar(50)
+
+- customer_id - integer
+
+- country - nvarchar(50)
+
+- product_id - integer
+
+- quantity - smallint
+
+- unit_price - nvarchar(50)
+
+- discount_pct - nvarchar(50)
+
+- status - nvarchar(50)
+
+I leave the order_id column as is, since the integer format is perfectly suited to this column. I start changing the column formats with order_date, changing it from nvarchar to date:
+
+```sql
+ALTER TABLE sales_orders
+ALTER COLUMN order_date date;
+
+When trying to change the type of the order_date column to date, a conversion error appeared, meaning that at least one value in this column can't be correctly interpreted as a date. To find out exactly which values are causing the problem, instead of guessing, I checked directly using the TRY_CAST function, which (unlike a regular CAST) doesn't stop execution with an error, but returns NULL for values that can't be converted. This let me filter out exactly the records where the conversion failed, while also excluding genuinely empty values (order_date IS NOT NULL), so as not to confuse real missing data with an invalid format.
+```
+
+```sql
+SELECT DISTINCT order_date
+FROM sales_orders
+WHERE TRY_CAST(order_date AS date) IS NULL
+AND order_date IS NOT NULL;
+```
+
+![Screenshot](assets/screen_51.png)
+
+**_SCREEN 49: The order_date value that can't be converted to the date type_**
+
+The result showed a single value: 2024-13-40, month 13 and day 40 don't exist. So this is a data error, not a formatting issue (unlike earlier cases in this project, where the data was correct, just written in a different layout). This value can't be safely corrected, since there's no way to know what date was intended; I'll need to decide whether to remove it or replace it with NULL before the ALTER TABLE can succeed.
+
+So I check how many such records there are and whether there's any connection between them and the rest of the columns.
+
+```sql
+SELECT *
+FROM sales_orders
+WHERE order_date = '2024-13-40';
+```
+
+![Screenshot](assets/screen_52.png)
+
+**_SCREEN 50: Rows with the value 2024-13-40 in the order_date column_**
+
+I didn't notice any relationship between the invalid date and the rest of the columns. There are 598 invalid records, which is 0.23% of the total. Since this is a small amount, I decide to remove these records with the following query:
+
+```sql
+DELETE FROM sales_orders
+WHERE order_date = '2024-13-40';
+```
+
+As a result, 598 rows were removed.
+
+I tried again to transform the table with the following query:
+
+```sql
+ALTER TABLE sales_orders
+ALTER COLUMN order_date date;
+```
+
+This time the command ran successfully.
+
+I leave the customer_id, country, and product_id columns unchanged, since their current formats already match the nature of the data they hold. customer_id and product_id are numeric identifiers, so the integer type suits them perfectly, there's no need to convert them to any other type. country stores text country codes/names, so the nvarchar(50) type is also correct for this kind of data. Changing the format only made sense where a column was stored as text (nvarchar) despite actually representing a different data type, e.g. a date or a decimal number. For these three columns, no such mismatch occurs.
+
+As for the quantity column, I leave it unchanged, since its current format is already suited to the data it holds. quantity represents the number of items in an order, so it's always a whole number, with no decimal part.
+
+I convert the unit_price column from nvarchar(50) to decimal, since it stores prices, i.e. numeric values with a decimal part, not text. Keeping prices as text is problematic for several reasons: it prevents correct mathematical calculations (e.g. summing revenue or multiplying by quantity) without converting every time, it doesn't guarantee a consistent write format (e.g. the decimal separator may vary), and it also allows values to be entered that aren't numbers at all, which is a source of data errors. I carry out the conversion with the following command:
+
+```sql
+ALTER TABLE sales_orders
+ALTER COLUMN unit_price decimal(10,2)
+```
+
+I convert the discount_pct column from nvarchar(50) to decimal(10,2), since it's a percentage/numeric value, not text. I do this with the following query:
+
+```sql
+ALTER TABLE sales_orders
+ALTER COLUMN discount_pct decimal(10,2);
+```
+
+Just as with order_date, trying to change the column type ended in a conversion error, so I checked with TRY_CAST which values can't be converted to decimal.
+
+```sql
+SELECT TOP 1000 discount_pct
+FROM sales_orders
+WHERE TRY_CAST(discount_pct AS decimal(10,2)) IS NULL; 
+```
+
+![Screenshot](assets/screen_53.png)
+
+**_SCREEN 51: Values in the discount_pct column that can't be converted to decimal_**
+
+The result showed that the problematic values have a percent sign at the end, e.g. 10% instead of 10. SQL Server can't automatically interpret such a value as a number: the % sign makes the whole string be treated as plain text rather than a numeric value. Before the column type change can succeed, the % sign will first need to be removed from all the values in this column.
+
+To remove the % sign from the values in the discount_pct column, I first checked how the REPLACE() function would work on this data before applying it permanently, the same way as with earlier changes in this project: preview first, then the actual modification.
+
+```sql
+SELECT TOP 10000 discount_pct,
+   REPLACE (discount_pct, '%', '') AS without_pct
+FROM sales_orders
+WHERE TRY_CAST(discount_pct AS decimal(10,2)) IS NULL 	
+```
+
+![Screenshot](assets/screen_54.png)
+
+**_SCREEN 52: Preview of the discount_pct column after removing the % sign with the REPLACE() function_**
+
+The result showed that REPLACE() correctly removes the % sign, leaving just the numeric value as text (e.g. 10% -> 10), ready for conversion to decimal. After confirming that this worked correctly, I applied the same logic in an UPDATE to permanently overwrite the data in the table.
+
+```sql
+UPDATE sales_orders
+SET discount_pct = REPLACE (discount_pct, '%', '')
+WHERE discount_pct LIKE '%[%]%';
+```
+
+In the WHERE condition I used the pattern LIKE '%[%]%', so the change would only apply to rows that actually contain a % sign; this way, values already written correctly (without a percent sign) remain untouched.
+
+Now I tried again to change the data format with the query below:
+
+```sql
+ALTER TABLE sales_orders
+ALTER COLUMN discount_pct decimal(10,2);
+```
+
+This time the command ran correctly.
+
+I leave the status column unchanged as nvarchar(50), since it stores text values (order status names, e.g. SHIPPED, COMPLETED, DONE), not numbers or dates.
+
+After finishing work on the sales_orders table, I move on to formatting the columns in the products_mmmgmeum table. As before, I first check the structure of the table.
+
+```sql
+SELECT TOP 5 *
+FROM products_mmmgmeum;
+```
+
+![Screenshot](assets/screen_55.png)
+
+**_SCREEN 53: structure and sample data of the products_mmmgmeum table_**
+
+The table has five columns with the following formats:
+
+product_id - smallint
+
+category - nvarchar(50)
+
+sub_category - nvarchar(50)
+
+base_price - decimal(10,2)
+
+launch_date - date
+
+I leave the product_id, category, and sub_category columns unchanged, since their current formats already match the nature of the data they hold.
+
+In the table, the base_price and launch_date columns are stored as nvarchar(50), even though they represent a decimal number and a date, respectively. I start with the base_price column:
+
+```sql
+ALTER TABLE products_mmmgmeum
+ALTER COLUMN base_price decimal(10,2);
+```
+
+The command ran without an error, meaning all the values in the base_price column converted correctly to decimal. Next, I try to convert the launch_date column from nvarchar to date the same way:
+
+```sql
+ALTER TABLE products_mmmgmeum
+ALTER COLUMN launch_date date;
+```
+
+This time a conversion error appeared, meaning not all the values in the column can be interpreted as a date. Just as with order_date in the sales_orders table, I check with TRY_CAST exactly which values are causing the problem:
+
+```sql
+SELECT DISTINCT launch_date
+FROM products_mmmgmeum
+WHERE TRY_CAST (launch_date AS date) IS NULL
+AND launch_date IS NOT NULL;
+```
+
+![Screenshot](assets/screen_56.png)
+
+**_SCREEN 54: The launch_date value that can't be converted to the date type_**
+
+Just as before with the order_date column, one value turned out to be problematic: 2024-13-40, such a date doesn't exist (month 13, day 40). I check how many records have this value and whether there's any connection between them and the rest of the columns:
+
+```sql
+SELECT *
+FROM products_mmmgmeum
+WHERE launch_date = '2024-13-40';
+```
+
+![Screenshot](assets/screen_57.png)
+
+**_SCREEN 55: Records in products_mmmgmeum with the value 2024-13-40 in the launch_date column_**
+
+The error affects 4 products: product_id 412, 1611, 2212, and 2398. Before deciding to remove them, I want to check whether these products still have any related orders in the sales_orders table; removing a product that orders still refer to could leave orphaned references in the data.
+
+```sql
+SELECT *
+FROM sales_orders
+WHERE product_id IN ('412','1611','2212','2398');
+```
+
+![Screenshot](assets/screen_58.png)
+
+**_SCREEN 56: Orders in sales_orders linked to products 412, 1611, 2212, and 2398_**
+
+The result shows that these four product_id values still have numerous, active orders in the sales_orders table.
+
+Although removing these 4 rows leaves orders in sales_orders that refer to a product_id that no longer exists, I decided not to reverse this operation. launch_date is just 4 rows out of the 2,496 remaining in the table, so losing the ability to analyze the launch date for these specific products isn't a significant loss. I treat this as a knowingly accepted limitation of the dataset: in future analyses joining sales_orders with products, it should be kept in mind that for product_id 412, 1611, 2212, and 2398, no matching category, subcategory, or base price will be available.
+
+Still, given the date value that can't be corrected and the lack of any reliable way to reconstruct the correct launch_date, I remove these 4 rows from products_mmmgmeum:
+
+```sql
+DELETE FROM products_mmmgmeum
+WHERE launch_date = '2024-13-40';
+```
+
+4 rows were removed, which is less than 0.1% of the products_mmmgmeum table. It's worth keeping the earlier observation in mind, though. Orders relating to these four products remain in sales_orders, and during further analysis joining the two tables, they will be treated as referring to a product that no longer exists.
+
+### Formatting data in the inventory_mmmgkubv table
+
+The last table where I deal with column formats is inventory_mmmgkubv. As before, I first check the structure of the table.
+
+```sql
+SELECT TOP 5 *
+FROM inventory_mmmgkubv;
+```
+
+![Screenshot](assets/screen_59.png)
+
+**_SCREEN 57: structure of the inventory table_**
+
+The table has four columns with the following formats:
+
+product_id - int
+
+warehouse_country - nvarchar(50)
+
+stock_quantity - smallint
+
+last_stock_update - date
+
+Unlike sales_orders and products, none of these columns need a data type change: product_id is a numeric identifier, so integer is appropriate; warehouse_country stores text country names/codes, so nvarchar is the right type. last_stock_update is already stored as date, so its formatting was done earlier. The only column worth additional verification is stock_quantity. I want to check whether the smallint type is sufficient for it, or whether the values in this column are large enough to require the int type.
+
+```sql
+SELECT MAX(stock_quantity)
+FROM inventory_mmmgkubv;
+```
+
+![Screenshot](assets/screen_60.png)
+
+**_SCREEN 58: maximum value in the stock_quantity column_**
+
+The smallint type can store values from -32,768 to 32,767, which is far more than needed for realistic stock levels. The maximum value in the stock_quantity column is only 567, so there's no risk at all of exceeding the range, even if stock levels increased significantly in the future.
+
+None of the columns in the inventory_mmmgkubv table needed a data type conversion, then. All the formats were already suited to the data they held.
+
+### Summary
+
+Formatting the columns covered all three tables in the project. In sales_orders, order_date was converted from nvarchar to date (after removing 598 rows with the impossible date 2024-13-40), and unit_price and discount_pct were converted from nvarchar to decimal (for discount_pct, this additionally required first removing the % sign from the text values). The order_id, customer_id, product_id, country, status, and quantity columns were left unchanged, since their formats already matched the nature of the data. In products_mmmgmeum, base_price was converted to decimal and launch_date to date, with the launch_date conversion requiring the removal of 4 rows with the same impossible date, 2024-13-40. These products still had related orders in sales_orders, so the decision to remove them was treated as a knowingly accepted limitation of the dataset, not a consequence-free fix. The product_id, category, and sub_category columns needed no changes. In inventory_mmmgkubv, no column needed a type conversion: product_id, warehouse_country, and last_stock_update already had suitable formats, and stock_quantity, despite being smallint, has a sufficient value range (a maximum of 567 against a limit of 32,767) that it doesn't need to be changed to int. A recurring theme at this stage was the appearance of the same impossible date, 2024-13-40, in two independent tables, which points to a shared root cause on the side of the data collection system, rather than random, unrelated glitches.
+
 
 ## Recommendations for the Data Collection Team
 
