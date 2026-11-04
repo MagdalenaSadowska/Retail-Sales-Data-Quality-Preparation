@@ -4,7 +4,7 @@ Retail sales EDA | SQL (data cleaning &amp; prep)
 
 ## 🛠️ Tools Used
 
-- SQL Server (SSMS) - data cleaning & analysis
+- SQL Server (SSMS) - data cleaning & analysis 
 
 ## 📁 Data
 
